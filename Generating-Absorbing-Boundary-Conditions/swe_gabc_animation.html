@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌊 Shallow Water Equations: GABC Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .container {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .simulation {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .simulation h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .wave-container {
+            height: 200px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #4682B4 100%);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.3);
+            margin-bottom: 20px;
+        }
+
+        .normal .wave-container {
+            border-color: #90EE90;
+            box-shadow: 0 0 20px rgba(144, 238, 144, 0.3);
+        }
+
+        .gabc .wave-container {
+            border-color: #87CEEB;
+            box-shadow: 0 0 20px rgba(135, 206, 235, 0.3);
+        }
+
+        .boundary {
+            position: absolute;
+            top: 0;
+            width: 8px;
+            height: 100%;
+            background: linear-gradient(to bottom, #654321, #8B4513);
+            box-shadow: inset 2px 0 4px rgba(0,0,0,0.3);
+        }
+
+        .boundary.left {
+            left: 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .boundary.right {
+            right: 0;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .wave {
+            position: absolute;
+            width: 40px;
+            height: 30px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            animation-timing-function: ease-in-out;
+        }
+
+        .wave::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: ripple 0.6s infinite;
+        }
+
+        @keyframes ripple {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        .normal .wave {
+            animation: normalWave 6s infinite;
+        }
+
+        .gabc .wave {
+            animation: gabcWave 6s infinite;
+        }
+
+        @keyframes normalWave {
+            0% { left: 20px; opacity: 1; }
+            45% { left: calc(100% - 70px); opacity: 1; }
+            50% { left: calc(100% - 70px); opacity: 0.7; transform: translateY(-50%) scaleX(-1); }
+            95% { left: 20px; opacity: 0.7; transform: translateY(-50%) scaleX(-1); }
+            100% { left: 20px; opacity: 1; transform: translateY(-50%) scaleX(1); }
+        }
+
+        @keyframes gabcWave {
+            0% { left: 20px; opacity: 1; }
+            80% { left: calc(100% - 70px); opacity: 1; }
+            90% { left: calc(100% - 70px); opacity: 0.5; }
+            100% { left: calc(100% - 70px); opacity: 0; }
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1.1em;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .reflection {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            animation: glow 1s infinite alternate;
+        }
+
+        .absorption {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            animation: fade 1s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+            to { box-shadow: 0 0 20px rgba(255, 107, 107, 0.8); }
+        }
+
+        @keyframes fade {
+            from { box-shadow: 0 0 10px rgba(78, 205, 196, 0.5); }
+            to { box-shadow: 0 0 20px rgba(78, 205, 196, 0.8); }
+        }
+
+        .controls {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .restart-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌊 Shallow Water Equations Animation</h1>
+        <p>Comparison of wave behavior with and without GABC boundary conditions</p>
+    </div>
+
+    <div class="container">
+        <div class="simulation normal">
+            <h2>🟩 Without GABC (Normal)</h2>
+            <div class="timer" id="normalTimer">Time: 0.0s</div>
+            <div class="wave-container">
+                <div class="boundary left"></div>
+                <div class="boundary right"></div>
+                <div class="wave"></div>
+            </div>
+            <div class="status" id="normalStatus">Wave propagating →</div>
+        </div>
+
+        <div class="simulation gabc">
+            <h2>🟦 With GABC</h2>
+            <div class="timer" id="gabcTimer">Time: 0.0s</div>
+            <div class="wave-container">
+                <div class="boundary left"></div>
+                <div class="boundary right"></div>
+                <div class="wave"></div>
+            </div>
+            <div class="status" id="gabcStatus">Wave propagating →</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="restart-btn" onclick="restartAnimation()">🔄 Restart Animation</button>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center; opacity: 0.8; font-size: 0.9em;">
+        <p style="margin-bottom: 10px;">💻 Made by <strong>Wishant</strong>, <strong>Hicham</strong> and <strong>Damian</strong></p>
+        <p style="font-size: 0.8em; opacity: 0.7;">Computational Science NL Hackathon 2025</p>
+    </div>
+
+    <script>
+        let animationStartTime = Date.now();
+        let animationDuration = 6000; // 6 seconds
+
+        function updateTimers() {
+            const elapsed = (Date.now() - animationStartTime) / 1000;
+            const time = Math.min(elapsed, 6.0);
+            
+            document.getElementById('normalTimer').textContent = `Time: ${time.toFixed(1)}s`;
+            document.getElementById('gabcTimer').textContent = `Time: ${time.toFixed(1)}s`;
+            
+            // Update status messages
+            updateStatus('normalStatus', time, false);
+            updateStatus('gabcStatus', time, true);
+        }
+
+        function updateStatus(elementId, time, isGABC) {
+            const element = document.getElementById(elementId);
+            
+            if (time < 2.7) {
+                element.innerHTML = 'Wave propagating →';
+            } else if (time < 3.0) {
+                element.innerHTML = 'Wave reaching boundary...';
+            } else if (time < 6.0) {
+                if (isGABC) {
+                    element.innerHTML = '<span class="absorption">✅ Wave absorbed!</span>';
+                } else {
+                    element.innerHTML = '<span class="reflection">⬅️ Wave reflecting!</span>';
+                }
+            } else {
+                if (isGABC) {
+                    element.innerHTML = '<span class="absorption">🎯 Perfect absorption achieved</span>';
+                } else {
+                    element.innerHTML = '<span class="reflection">🔄 Reflection completed</span>';
+                }
+            }
+        }
+
+        function restartAnimation() {
+            animationStartTime = Date.now();
+            
+            // Reset animations
+            const waves = document.querySelectorAll('.wave');
+            waves.forEach(wave => {
+                wave.style.animation = 'none';
+                wave.offsetHeight; // Trigger reflow
+                if (wave.closest('.normal')) {
+                    wave.style.animation = 'normalWave 6s infinite';
+                } else {
+                    wave.style.animation = 'gabcWave 6s infinite';
+                }
+            });
+        }
+
+        // Update timers every 100ms
+        setInterval(updateTimers, 100);
+
+        // Auto-restart every 7 seconds
+        setInterval(restartAnimation, 7000);
+    </script>
+</body>
+</html>
